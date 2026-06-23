@@ -3,7 +3,6 @@ package com.prog3.food_store_api.services;
 import com.prog3.food_store_api.DTOs.CategoryCreate;
 import com.prog3.food_store_api.DTOs.CategoryDto;
 import com.prog3.food_store_api.DTOs.CategoryMapper;
-import com.prog3.food_store_api.exceptions.ResourceNotFoundException;
 import com.prog3.food_store_api.models.Category;
 import com.prog3.food_store_api.repositories.CategoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +25,11 @@ public class CategoryService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public CategoryDto getById(Long id) {
+        return categoryMapper.toDto(findEntityById(id));
+    }
+
     @Transactional
     public CategoryDto create(CategoryCreate dto) {
         return categoryMapper.toDto(categoryRepository.save(categoryMapper.toEntity(dto)));
@@ -46,7 +50,6 @@ public class CategoryService {
     }
 
     public Category findEntityById(Long id) {
-        return categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
+        return categoryRepository.findByIdOrThrow(id);
     }
 }

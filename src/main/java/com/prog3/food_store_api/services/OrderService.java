@@ -1,12 +1,13 @@
 package com.prog3.food_store_api.services;
 
 import com.prog3.food_store_api.DTOs.OrderCreate;
-import com.prog3.food_store_api.DTOs.OrderDetailCreate;
 import com.prog3.food_store_api.DTOs.OrderDto;
 import com.prog3.food_store_api.DTOs.OrderMapper;
-import com.prog3.food_store_api.exceptions.ResourceNotFoundException;
+import com.prog3.food_store_api.DTOs.OrderUpdate;
+import com.prog3.food_store_api.exceptions.BusinessException;
 import com.prog3.food_store_api.models.Order;
 import com.prog3.food_store_api.models.OrderDetail;
+import com.prog3.food_store_api.models.Product;
 import com.prog3.food_store_api.repositories.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,19 @@ public class OrderService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public OrderDto getById(Long id) {
+        return orderMapper.toDto(orderRepository.findByIdOrThrow(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderDto> getByUser(Long userId) {
+        userService.findEntityById(userId);
+        return orderRepository.findAllByUserIdAndDeletedFalse(userId).stream()
+                .map(orderMapper::toDto)
+                .toList();
+    }
+
     @Transactional
     public OrderDto create(OrderCreate dto) {
         Order order = Order.builder()
@@ -40,44 +54,44 @@ public class OrderService {
                 .user(userService.findEntityById(dto.userId()))
                 .build();
 
-        addDetails(order, dto.orderDetails());
+        dto.orderDetails().forEach(d -> {
+            Product product = productService.findEntityById(d.productId());
+
+            if (!product.isAvailable()) {
+                throw new BusinessException(
+                        "El producto '" + product.getName() + "' no está disponible para la venta");
+            }
+            if (product.getStock() < d.quantity()) {
+                throw new BusinessException(
+                        "Stock insuficiente para '" + product.getName() +
+                        "'. Disponible: " + product.getStock() + ", Solicitado: " + d.quantity());
+            }
+
+            product.setStock(product.getStock() - d.quantity());
+
+            order.addOrderDetail(OrderDetail.builder()
+                    .product(product)
+                    .quantity(d.quantity())
+                    .build());
+        });
 
         return orderMapper.toDto(orderRepository.save(order));
     }
 
     @Transactional
-    public OrderDto update(Long id, OrderCreate dto) {
-        Order order = findEntityById(id);
+    public OrderDto update(Long id, OrderUpdate dto) {
+        Order order = orderRepository.findByIdOrThrow(id);
 
-        order.setStatus(dto.status());
-        order.setPaymentMethod(dto.paymentMethod());
-        order.setUser(userService.findEntityById(dto.userId()));
-
-        order.getOrderDetails().clear();
-        addDetails(order, dto.orderDetails());
+        if (dto.status() != null) order.setStatus(dto.status());
+        if (dto.paymentMethod() != null) order.setPaymentMethod(dto.paymentMethod());
 
         return orderMapper.toDto(orderRepository.save(order));
     }
 
     @Transactional
     public void delete(Long id) {
-        Order order = findEntityById(id);
+        Order order = orderRepository.findByIdOrThrow(id);
         order.setDeleted(true);
         orderRepository.save(order);
-    }
-
-    private void addDetails(Order order, List<OrderDetailCreate> detailsDto) {
-        detailsDto.forEach(d -> {
-            OrderDetail detail = OrderDetail.builder()
-                    .product(productService.findEntityById(d.productId()))
-                    .quantity(d.quantity())
-                    .build();
-            order.addOrderDetail(detail);
-        });
-    }
-
-    private Order findEntityById(Long id) {
-        return orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
     }
 }

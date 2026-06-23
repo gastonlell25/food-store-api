@@ -26,8 +26,13 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDto> getProductById(@PathVariable Long id) {
+    public ResponseEntity<ProductDto> getById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getById(id));
+    }
+
+    @GetMapping("/categoria/{id}")
+    public ResponseEntity<List<ProductDto>> getByCategory(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.getByCategory(id));
     }
 
     @PostMapping

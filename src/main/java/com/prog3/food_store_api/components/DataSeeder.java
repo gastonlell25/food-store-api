@@ -26,10 +26,10 @@ public class DataSeeder implements ApplicationRunner {
     private final OrderRepository orderRepository;
     private final PasswordEncoderComponent passwordEncoder;
 
-    @Value("${seed.admin.email:admin@foodstore.com}")
+    @Value("${seed.admin.email:admin@admin.com}")
     private String adminEmail;
 
-    @Value("${seed.admin.password:admin1234}")
+    @Value("${seed.admin.password:123456}")
     private String adminPassword;
 
     @Override

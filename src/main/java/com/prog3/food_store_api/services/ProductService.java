@@ -23,7 +23,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<ProductDto> getAll() {
-        return productRepository.findAllByDeletedFalse().stream()
+        return productRepository.findAll().stream()
                 .map(productMapper::toDto)
                 .toList();
     }
@@ -32,7 +32,15 @@ public class ProductService {
     public ProductDto getById(Long id) {
         return productRepository.findByIdAndDeletedFalse(id)
                 .map(productMapper::toDto)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Entidad con id " + id + " no encontrado"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductDto> getByCategory(Long categoryId) {
+        categoryService.findEntityById(categoryId);
+        return productRepository.findAllByCategoryIdAndDeletedFalse(categoryId).stream()
+                .map(productMapper::toDto)
+                .toList();
     }
 
     @Transactional
@@ -60,7 +68,6 @@ public class ProductService {
     }
 
     public Product findEntityById(Long id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+        return productRepository.findByIdOrThrow(id);
     }
 }

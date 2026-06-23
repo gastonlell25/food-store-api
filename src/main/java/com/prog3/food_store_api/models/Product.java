@@ -3,10 +3,12 @@ package com.prog3.food_store_api.models;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SQLRestriction;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "products")
+@SQLRestriction("deleted = false")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @SuperBuilder

@@ -5,7 +5,6 @@ import com.prog3.food_store_api.DTOs.UserDto;
 import com.prog3.food_store_api.DTOs.UserEdit;
 import com.prog3.food_store_api.DTOs.UserMapper;
 import com.prog3.food_store_api.components.PasswordEncoderComponent;
-import com.prog3.food_store_api.exceptions.ResourceNotFoundException;
 import com.prog3.food_store_api.models.User;
 import com.prog3.food_store_api.models.enums.Role;
 import com.prog3.food_store_api.repositories.UserRepository;
@@ -28,6 +27,11 @@ public class UserService {
         return userRepository.findAll().stream()
                 .map(userMapper::toDto)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getById(Long id) {
+        return userMapper.toDto(findEntityById(id));
     }
 
     @Transactional
@@ -53,7 +57,6 @@ public class UserService {
     }
 
     public User findEntityById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        return userRepository.findByIdOrThrow(id);
     }
 }
